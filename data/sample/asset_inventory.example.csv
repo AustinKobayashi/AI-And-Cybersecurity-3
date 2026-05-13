@@ -1,0 +1,6 @@
+asset_id,ip,role,criticality,notes
+asset-web-01,10.10.20.15,public_web_server,high,Public-facing demo application host
+asset-dc-01,10.10.10.5,domain_controller,critical,Identity infrastructure
+asset-ws-22,10.10.30.22,workstation,medium,Standard employee workstation
+asset-lab-01,10.10.99.10,lab_host,low,Controlled lab host
+

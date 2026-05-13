@@ -1,0 +1,7 @@
+# Runtime dependencies planned for the future implementation.
+# The current scaffold does not require these packages until code is added.
+numpy
+scikit-learn
+pydantic
+typer
+

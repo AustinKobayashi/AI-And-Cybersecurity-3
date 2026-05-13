@@ -1,0 +1,15 @@
+[project]
+name = "ai-cybersecurity-capstone-minisoc"
+version = "0.1.0"
+description = "Boilerplate for a simulated AI-assisted mini-SOC capstone pipeline."
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "scikit-learn",
+  "pydantic",
+  "typer",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

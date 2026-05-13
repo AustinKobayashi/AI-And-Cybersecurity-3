@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Generated capstone outputs
+outputs/decision_logs/*
+outputs/evidence_exports/*
+outputs/review_queue/*
+outputs/tickets/*
+outputs/*.jsonl
+outputs/*.json
+outputs/*.txt
+models/*
+
+# Keep scaffold directories
+!outputs/**/.gitkeep
+!models/README.md
+

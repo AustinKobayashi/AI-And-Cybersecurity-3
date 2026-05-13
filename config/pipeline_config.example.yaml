@@ -1,0 +1,40 @@
+# Example configuration for the planned mini-SOC pipeline.
+# This is a template only. The pipeline implementation has not been added yet.
+
+run:
+  mode: "offline_demo"
+  random_seed: 42
+  require_human_review_for_high_impact_actions: true
+
+inputs:
+  event_file: "data/sample/simulated_events.eve.jsonl"
+  asset_inventory_file: "data/sample/asset_inventory.example.csv"
+
+outputs:
+  base_dir: "outputs"
+  decision_log: "outputs/decision_logs/decisions.jsonl"
+  review_queue: "outputs/review_queue/review_queue.jsonl"
+  ticket_dir: "outputs/tickets"
+  evidence_export_dir: "outputs/evidence_exports"
+  simulated_blocklist: "outputs/simulated_blocklist.txt"
+
+labels:
+  - "benign"
+  - "credential_access"
+  - "lateral_movement"
+  - "command_and_control"
+  - "exploit_attempt"
+  - "needs_human_review"
+
+response_paths:
+  auto_close_max_risk: 25
+  review_min_risk: 40
+  ticket_min_risk: 60
+  simulated_block_min_risk: 80
+
+guardrails:
+  route_missing_required_fields_to_review: true
+  route_obfuscated_fields_to_review: true
+  route_prompt_injection_like_text_to_review: true
+  minimum_classifier_confidence_for_automation: 0.75
+
