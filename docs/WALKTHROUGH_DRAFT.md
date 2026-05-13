@@ -16,11 +16,11 @@ Log Source -> Parser -> Feature Extractor -> Classifier -> Scoring Engine -> Gua
 
 ## 3. Model Or Logic Explanation
 
-Describe the planned event labels, model confidence, risk score, reason codes, and guardrail overrides.
+Describe the implemented event labels, model confidence, deterministic risk score, severity lanes, and reason codes. Note that guardrail overrides are still planned.
 
 ## 4. Bypass And Failure Handling
 
-Explain how missing fields, malformed events, high-entropy strings, obfuscated input, and prompt-injection-like text route to human review.
+Explain how risk scoring raises priority for missing fields, high-entropy strings, obfuscated input, and prompt-injection-like text. Note that the planned guardrail layer will route these cases to human review.
 
 ## 5. Forensic Readiness Strategy
 
@@ -41,8 +41,8 @@ Explain what evidence is preserved:
 - No real firewall or endpoint action.
 - No production SIEM or SOAR integration.
 - No LLM in the baseline version.
+- Guardrails, response routing, evidence logging, and forensic export are still planned.
 
 ## Integrity Statement
 
 I confirm that this submission is my original work. Any external tools, references, datasets, frameworks, or code libraries used in this project have been acknowledged. I understand that the work must represent my own design, analysis, and implementation decisions.
-

@@ -14,6 +14,7 @@ from .classifier import classify_events, train_classifier
 from .features import extract_features
 from .intake import load_event_records, summarize_records
 from .intake import load_events
+from .scoring import score_risk
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -189,7 +190,12 @@ def _classify_command(path: str, train_path: str) -> int:
     target_features = [extract_features(event) for event in target_events]
     model_bundle = train_classifier(training_features)
     classifications = classify_events(target_features, model_bundle)
+    risk_scores = [
+        score_risk(classification, feature_record)
+        for classification, feature_record in zip(classifications, target_features)
+    ]
     predicted_counts = Counter(item["predicted_label"] for item in classifications)
+    severity_counts = Counter(item["severity"] for item in risk_scores)
 
     print(f"Training file: {train_path}")
     print(f"Classify file: {path}")
@@ -201,11 +207,17 @@ def _classify_command(path: str, train_path: str) -> int:
     for label, count in sorted(predicted_counts.items()):
         print(f"  {label}: {count}")
 
+    print("Severity counts:")
+    for severity, count in sorted(severity_counts.items()):
+        print(f"  {severity}: {count}")
+
     print("Sample classifications:")
-    for item in classifications[:10]:
+    for item, risk in zip(classifications[:10], risk_scores[:10]):
         print(
             f"  {item['event_id']}: {item['predicted_label']} "
             f"confidence={item['confidence']:.4f} "
+            f"risk={risk['risk_score']} "
+            f"severity={risk['severity']} "
             f"expected={item['expected_label']}"
         )
 

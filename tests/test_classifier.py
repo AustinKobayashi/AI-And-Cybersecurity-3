@@ -117,5 +117,20 @@ def test_evaluate_cli_rejects_too_small_default_split(capsys):
     assert "evaluation split is too small" in output
 
 
+def test_classify_cli_reports_risk_scores(capsys):
+    exit_code = main(["classify", str(DEMO_DATASET), "--train", str(COMBINED_DATASET)])
+    output = capsys.readouterr().out
+
+    assert exit_code == 0
+    assert "Severity counts:" in output
+    assert "  high: 15" in output
+    assert "  low: 5" in output
+    assert "demo-0001: benign confidence=1.0000 risk=13 severity=low expected=benign" in output
+    assert (
+        "demo-0008: credential_access confidence=1.0000 "
+        "risk=71 severity=high expected=credential_access"
+    ) in output
+
+
 def _feature_records(path: Path) -> list[dict]:
     return [extract_features(event) for event in load_events(str(path))]

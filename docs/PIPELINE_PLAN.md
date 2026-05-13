@@ -1,12 +1,14 @@
 # Capstone Technical Track Pipeline Plan
 
-This document is the project-local planning source for the proposed AI-supported cyber defence workflow. It describes what the pipeline should contain and how each part should be used. It is not an implementation.
+This document is the project-local planning source for the proposed AI-supported cyber defence workflow. It describes what the pipeline should contain, what has been implemented, and how each part should be used.
 
 ## Objective
 
 Design a small, safe, auditable AI-assisted detection and response workflow that demonstrates event intake, classification, risk scoring, guardrails, response routing, and forensic readiness.
 
 The workflow should run on simulated logs, generated events, lab traffic, or controlled PCAP-derived records. It should not connect to a live production network.
+
+Current implementation status: synthetic data, event intake, feature extraction, classification, and deterministic risk scoring are implemented. Guardrails, response routing, evidence logging, and forensic export remain planned.
 
 ## Architecture
 
@@ -29,7 +31,7 @@ Simulated Suricata-style events
 | Event intake | Load and validate Suricata-style JSON events | `data/sample/simulated_events.eve.jsonl` | Validated event records and raw event hashes |
 | Feature extraction | Turn events into explainable security signals | Validated events | Normalized feature records and reason codes |
 | AI-assisted classifier | Classify events into threat categories | Feature records | Label, confidence, and feature reasons |
-| Risk scoring | Prioritize operational risk | Label, confidence, severity, asset criticality, evasion flags | Risk score and severity lane |
+| Risk scoring | Prioritize operational risk | Label, confidence, severity, asset criticality, evasion flags | Implemented risk score and severity lane |
 | Guardrails | Prevent unsafe automation | Event quality, model output, risk score | Automation allowed or review required |
 | Response routing | Choose safe next action | Guardrailed decision | Log-only, review, ticket, or simulated block action |
 | Evidence logging | Preserve the decision trail | Raw event, features, model output, action | Decision log, model metadata, and action record |
@@ -97,4 +99,3 @@ The decision log should preserve:
 - Module 5: auditability, explainability, accountability, and human oversight.
 - Module 6: Suricata-style telemetry, alert triage, risk scoring, and false-positive reduction.
 - Module 7: forensic logging, model metadata, hashes, correlation IDs, and chain-of-custody evidence.
-
