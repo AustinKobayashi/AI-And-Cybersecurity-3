@@ -1,0 +1,90 @@
+{
+  "ai_generated_dataset_notice": "These files contain synthetic AI-generated security telemetry for coursework and demo use only.",
+  "dataset_name": "synthetic_minisoc_capstone_dataset",
+  "files": {
+    "data/raw/synthetic_minisoc_events_2000.eve.jsonl": {
+      "records": 2000,
+      "sha256": "255439642386aa7f40d9501f27b78f2e9379cf4a337b302637e63218e010ceac"
+    },
+    "data/raw/synthetic_minisoc_label_distribution.csv": {
+      "records": 12,
+      "sha256": "7d2b9d2490f8a1d0fbc293e98b6f01164df110007e35112c5eeecc118dafa9f6"
+    },
+    "data/sample/demo_scenario_events_20.eve.jsonl": {
+      "records": 20,
+      "sha256": "d326f7211405724569740eef3001b2a443d0b454ed76baced53e6b26f7b51ab2"
+    }
+  },
+  "generated_at_utc": "2026-05-13T01:45:21Z",
+  "intended_use": [
+    "capstone demonstration",
+    "future local model training experiments",
+    "future classification and guardrail evaluation",
+    "walkthrough and video narration support"
+  ],
+  "label_counts": {
+    "demo_scenario_events_20.eve.jsonl": {
+      "benign": 5,
+      "command_and_control": 3,
+      "credential_access": 3,
+      "exploit_attempt": 3,
+      "lateral_movement": 3,
+      "needs_human_review": 3
+    },
+    "synthetic_minisoc_events_2000.eve.jsonl": {
+      "benign": 1300,
+      "command_and_control": 140,
+      "credential_access": 220,
+      "exploit_attempt": 120,
+      "lateral_movement": 160,
+      "needs_human_review": 60
+    }
+  },
+  "notes": [
+    "Labels are proxy ground truth for the simulation and are not verified real incident labels.",
+    "pcap_filename values are synthetic provenance markers and do not refer to captured production traffic.",
+    "Documentation IP ranges and .test hostnames are used to avoid representing real external systems."
+  ],
+  "random_seed": 42,
+  "safety_boundary": "No live traffic, real malware, online tools, production logs, or real containment actions are involved.",
+  "schema": {
+    "common_fields": [
+      "event_id",
+      "timestamp",
+      "event_type",
+      "src_ip",
+      "dest_ip",
+      "dest_port",
+      "proto",
+      "alert.signature",
+      "alert.severity",
+      "http.hostname",
+      "http.url",
+      "http.user_agent",
+      "dns.query",
+      "flow.bytes_toserver",
+      "flow.bytes_toclient",
+      "flow.pkts_toserver",
+      "flow.pkts_toclient",
+      "community_id",
+      "pcap_filename",
+      "asset_id",
+      "asset_role",
+      "asset_criticality",
+      "expected_label",
+      "scenario",
+      "synthetic_ground_truth",
+      "review_reason"
+    ],
+    "optional_fields": [
+      "failed_login_count",
+      "internal_probe_count",
+      "callback_interval_seconds",
+      "uri_entropy_hint",
+      "domain_entropy_hint",
+      "obfuscation_flags",
+      "missing_field_flags",
+      "prompt_injection_like_text"
+    ]
+  }
+}

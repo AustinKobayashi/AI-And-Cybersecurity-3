@@ -1,0 +1,13 @@
+dataset,label,count,percent
+synthetic_minisoc_events_2000,benign,1300,65.00
+synthetic_minisoc_events_2000,credential_access,220,11.00
+synthetic_minisoc_events_2000,lateral_movement,160,8.00
+synthetic_minisoc_events_2000,command_and_control,140,7.00
+synthetic_minisoc_events_2000,exploit_attempt,120,6.00
+synthetic_minisoc_events_2000,needs_human_review,60,3.00
+demo_scenario_events_20,benign,5,25.00
+demo_scenario_events_20,credential_access,3,15.00
+demo_scenario_events_20,lateral_movement,3,15.00
+demo_scenario_events_20,command_and_control,3,15.00
+demo_scenario_events_20,exploit_attempt,3,15.00
+demo_scenario_events_20,needs_human_review,3,15.00
