@@ -1,25 +1,71 @@
 {
   "ai_generated_dataset_notice": "These files contain synthetic AI-generated security telemetry for coursework and demo use only.",
   "dataset_name": "synthetic_minisoc_capstone_dataset",
+  "dataset_roles": {
+    "data/raw/synthetic_minisoc_events_clean_2000.eve.jsonl": "clean source dataset that proves the base simulation works",
+    "data/raw/synthetic_minisoc_events_combined_2200.eve.jsonl": "combined shuffled dataset used for model training and evaluation",
+    "data/raw/synthetic_minisoc_events_noisy_200.eve.jsonl": "noisy source dataset with harder but correctly labelled records",
+    "data/sample/demo_scenario_events_20.eve.jsonl": "small clean demo dataset for walkthrough and video narration"
+  },
   "files": {
-    "data/raw/synthetic_minisoc_events_2000.eve.jsonl": {
+    "data/raw/synthetic_minisoc_events_clean_2000.eve.jsonl": {
+      "label_counts": {
+        "benign": 1300,
+        "command_and_control": 140,
+        "credential_access": 220,
+        "exploit_attempt": 120,
+        "lateral_movement": 160,
+        "needs_human_review": 60
+      },
       "records": 2000,
       "sha256": "255439642386aa7f40d9501f27b78f2e9379cf4a337b302637e63218e010ceac"
     },
+    "data/raw/synthetic_minisoc_events_combined_2200.eve.jsonl": {
+      "label_counts": {
+        "benign": 1360,
+        "command_and_control": 165,
+        "credential_access": 250,
+        "exploit_attempt": 145,
+        "lateral_movement": 185,
+        "needs_human_review": 95
+      },
+      "records": 2200,
+      "sha256": "eb4da9e4fdeec7a55f63b814a56adb4f45a10886f2219b09e68d8f3e4faabff6"
+    },
+    "data/raw/synthetic_minisoc_events_noisy_200.eve.jsonl": {
+      "label_counts": {
+        "benign": 60,
+        "command_and_control": 25,
+        "credential_access": 30,
+        "exploit_attempt": 25,
+        "lateral_movement": 25,
+        "needs_human_review": 35
+      },
+      "records": 200,
+      "sha256": "186868c1cb080218701d23ccd39e5fd665cd4f43580265d94a5571cc45213635"
+    },
     "data/raw/synthetic_minisoc_label_distribution.csv": {
-      "records": 12,
-      "sha256": "7d2b9d2490f8a1d0fbc293e98b6f01164df110007e35112c5eeecc118dafa9f6"
+      "records": 24,
+      "sha256": "aa221c730a40c237c1aad58977799a4b37d67865dbcc154c12ac88518464b595"
     },
     "data/sample/demo_scenario_events_20.eve.jsonl": {
+      "label_counts": {
+        "benign": 5,
+        "command_and_control": 3,
+        "credential_access": 3,
+        "exploit_attempt": 3,
+        "lateral_movement": 3,
+        "needs_human_review": 3
+      },
       "records": 20,
       "sha256": "d326f7211405724569740eef3001b2a443d0b454ed76baced53e6b26f7b51ab2"
     }
   },
-  "generated_at_utc": "2026-05-13T01:45:21Z",
+  "generated_at_utc": "2026-05-13T03:11:17Z",
   "intended_use": [
     "capstone demonstration",
-    "future local model training experiments",
-    "future classification and guardrail evaluation",
+    "local model training experiments",
+    "classification and guardrail evaluation",
     "walkthrough and video narration support"
   ],
   "label_counts": {
@@ -31,31 +77,53 @@
       "lateral_movement": 3,
       "needs_human_review": 3
     },
-    "synthetic_minisoc_events_2000.eve.jsonl": {
+    "synthetic_minisoc_events_clean_2000.eve.jsonl": {
       "benign": 1300,
       "command_and_control": 140,
       "credential_access": 220,
       "exploit_attempt": 120,
       "lateral_movement": 160,
       "needs_human_review": 60
+    },
+    "synthetic_minisoc_events_combined_2200.eve.jsonl": {
+      "benign": 1360,
+      "command_and_control": 165,
+      "credential_access": 250,
+      "exploit_attempt": 145,
+      "lateral_movement": 185,
+      "needs_human_review": 95
+    },
+    "synthetic_minisoc_events_noisy_200.eve.jsonl": {
+      "benign": 60,
+      "command_and_control": 25,
+      "credential_access": 30,
+      "exploit_attempt": 25,
+      "lateral_movement": 25,
+      "needs_human_review": 35
     }
+  },
+  "noisy_dataset_notes": {
+    "label_policy": "No intentionally wrong labels are included. Noise comes from ambiguity, incomplete telemetry, and weak class signals.",
+    "missing_feature_policy": "Missing analysis fields remain valid but are flagged for review through missing_field_flags.",
+    "missing_feature_records": 80,
+    "records": 200
   },
   "notes": [
     "Labels are proxy ground truth for the simulation and are not verified real incident labels.",
+    "Noisy records are harder but still correctly labelled examples for model evaluation.",
     "pcap_filename values are synthetic provenance markers and do not refer to captured production traffic.",
     "Documentation IP ranges and .test hostnames are used to avoid representing real external systems."
   ],
   "random_seed": 42,
   "safety_boundary": "No live traffic, real malware, online tools, production logs, or real containment actions are involved.",
   "schema": {
-    "common_fields": [
-      "event_id",
-      "timestamp",
-      "event_type",
-      "src_ip",
-      "dest_ip",
+    "optional_analysis_fields": [
       "dest_port",
       "proto",
+      "community_id",
+      "pcap_filename",
+      "asset_role",
+      "asset_criticality",
       "alert.signature",
       "alert.severity",
       "http.hostname",
@@ -65,18 +133,9 @@
       "flow.bytes_toserver",
       "flow.bytes_toclient",
       "flow.pkts_toserver",
-      "flow.pkts_toclient",
-      "community_id",
-      "pcap_filename",
-      "asset_id",
-      "asset_role",
-      "asset_criticality",
-      "expected_label",
-      "scenario",
-      "synthetic_ground_truth",
-      "review_reason"
+      "flow.pkts_toclient"
     ],
-    "optional_fields": [
+    "optional_signal_fields": [
       "failed_login_count",
       "internal_probe_count",
       "callback_interval_seconds",
@@ -84,7 +143,19 @@
       "domain_entropy_hint",
       "obfuscation_flags",
       "missing_field_flags",
-      "prompt_injection_like_text"
+      "prompt_injection_like_text",
+      "scenario",
+      "review_reason"
+    ],
+    "required_core_fields": [
+      "event_id",
+      "timestamp",
+      "event_type",
+      "src_ip",
+      "dest_ip",
+      "asset_id",
+      "expected_label",
+      "synthetic_ground_truth"
     ]
   }
 }

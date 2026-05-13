@@ -40,10 +40,10 @@ tests/                   Tests for implemented workflow pieces
 
 ## CLI Commands
 
-Validate the full synthetic dataset:
+Validate the combined synthetic dataset:
 
 ```powershell
-python -m minisoc.cli validate data\raw\synthetic_minisoc_events_2000.eve.jsonl
+python -m minisoc.cli validate data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl
 ```
 
 Validate the small demo dataset:
@@ -64,16 +64,16 @@ Run only the feature extraction tests:
 python -m pytest tests\test_features.py
 ```
 
-Classify the demo dataset after training on the full synthetic dataset:
+Classify the demo dataset after training on the combined synthetic dataset:
 
 ```powershell
-python -m minisoc.cli classify data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_2000.eve.jsonl
+python -m minisoc.cli classify data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl
 ```
 
 Evaluate classifier performance with a 20 percent holdout split:
 
 ```powershell
-python -m minisoc.cli evaluate data\raw\synthetic_minisoc_events_2000.eve.jsonl
+python -m minisoc.cli evaluate data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl
 ```
 
 ## Planned Demo Flow

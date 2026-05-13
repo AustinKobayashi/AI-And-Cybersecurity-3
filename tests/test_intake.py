@@ -5,12 +5,14 @@ from minisoc.intake import load_event_records, load_events, raw_event_hash, summ
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FULL_DATASET = ROOT / "data" / "raw" / "synthetic_minisoc_events_2000.eve.jsonl"
+CLEAN_DATASET = ROOT / "data" / "raw" / "synthetic_minisoc_events_clean_2000.eve.jsonl"
+NOISY_DATASET = ROOT / "data" / "raw" / "synthetic_minisoc_events_noisy_200.eve.jsonl"
+COMBINED_DATASET = ROOT / "data" / "raw" / "synthetic_minisoc_events_combined_2200.eve.jsonl"
 DEMO_DATASET = ROOT / "data" / "sample" / "demo_scenario_events_20.eve.jsonl"
 
 
-def test_full_dataset_loads_and_summarizes():
-    records = load_event_records(str(FULL_DATASET))
+def test_clean_dataset_loads_and_summarizes():
+    records = load_event_records(str(CLEAN_DATASET))
     summary = summarize_records(records)
 
     assert summary["total"] == 2000
@@ -24,6 +26,42 @@ def test_full_dataset_loads_and_summarizes():
         "exploit_attempt": 120,
         "lateral_movement": 160,
         "needs_human_review": 60,
+    }
+
+
+def test_noisy_dataset_loads_and_summarizes():
+    records = load_event_records(str(NOISY_DATASET))
+    summary = summarize_records(records)
+
+    assert summary["total"] == 200
+    assert summary["valid"] == 200
+    assert summary["invalid"] == 0
+    assert summary["review_required"] == 97
+    assert summary["labels"] == {
+        "benign": 60,
+        "command_and_control": 25,
+        "credential_access": 30,
+        "exploit_attempt": 25,
+        "lateral_movement": 25,
+        "needs_human_review": 35,
+    }
+
+
+def test_combined_dataset_loads_and_summarizes():
+    records = load_event_records(str(COMBINED_DATASET))
+    summary = summarize_records(records)
+
+    assert summary["total"] == 2200
+    assert summary["valid"] == 2200
+    assert summary["invalid"] == 0
+    assert summary["review_required"] == 157
+    assert summary["labels"] == {
+        "benign": 1360,
+        "command_and_control": 165,
+        "credential_access": 250,
+        "exploit_attempt": 145,
+        "lateral_movement": 185,
+        "needs_human_review": 95,
     }
 
 
@@ -68,6 +106,31 @@ def test_missing_required_field_is_invalid(tmp_path):
     assert records[0]["valid"] is False
     assert records[0]["review_required"] is True
     assert "missing field: src_ip" in records[0]["errors"]
+
+
+def test_missing_analysis_fields_are_valid_but_review_required(tmp_path):
+    event = _first_demo_event()
+    event.pop("proto")
+    event.pop("dest_port")
+    event["http"].pop("url")
+    event["dns"].pop("query")
+    event["flow"].pop("bytes_toserver")
+    path = tmp_path / "missing-analysis-fields.eve.jsonl"
+    path.write_text(json.dumps(event) + "\n", encoding="utf-8")
+
+    records = load_event_records(str(path))
+
+    assert records[0]["valid"] is True
+    assert records[0]["errors"] == []
+    assert records[0]["review_required"] is True
+    assert "missing field flags present" in records[0]["review_reasons"]
+    assert records[0]["event"]["missing_field_flags"] == [
+        "dest_port",
+        "proto",
+        "http.url",
+        "dns.query",
+        "flow.bytes_toserver",
+    ]
 
 
 def test_review_needed_record_stays_valid_but_review_required():

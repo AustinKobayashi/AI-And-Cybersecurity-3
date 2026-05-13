@@ -9,7 +9,7 @@ from minisoc.intake import load_events
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FULL_DATASET = ROOT / "data" / "raw" / "synthetic_minisoc_events_2000.eve.jsonl"
+COMBINED_DATASET = ROOT / "data" / "raw" / "synthetic_minisoc_events_combined_2200.eve.jsonl"
 DEMO_DATASET = ROOT / "data" / "sample" / "demo_scenario_events_20.eve.jsonl"
 EXPECTED_LABELS = {
     "benign",
@@ -23,7 +23,7 @@ EXPECTED_LABELS = {
 
 @pytest.fixture(scope="module")
 def training_features():
-    return _feature_records(FULL_DATASET)
+    return _feature_records(COMBINED_DATASET)
 
 
 @pytest.fixture(scope="module")
@@ -39,7 +39,7 @@ def model_bundle(training_features):
 def test_train_classifier_supports_expected_labels(model_bundle):
     assert model_bundle["model_name"] == "mini_soc_decision_tree"
     assert model_bundle["model_version"] == "0.1.0"
-    assert model_bundle["training_record_count"] == 2000
+    assert model_bundle["training_record_count"] == 2200
     assert set(model_bundle["labels"]) == EXPECTED_LABELS
     assert model_bundle["feature_names"] == FEATURE_NAMES
 
@@ -96,17 +96,17 @@ def test_train_classifier_requires_labelled_records():
 
 
 def test_evaluate_cli_reports_holdout_metrics(capsys):
-    exit_code = main(["evaluate", str(FULL_DATASET)])
+    exit_code = main(["evaluate", str(COMBINED_DATASET)])
     output = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "Total labelled records: 2000" in output
-    assert "Training records: 1600" in output
-    assert "Test records: 400" in output
-    assert "Accuracy: 1.0000" in output
+    assert "Total labelled records: 2200" in output
+    assert "Training records: 1760" in output
+    assert "Test records: 440" in output
+    assert "Accuracy: 0.9545" in output
     assert "Classification report:" in output
     assert "Confusion matrix:" in output
-    assert "needs_human_review 1.0000 1.0000 1.0000 12" in output
+    assert "needs_human_review 1.0000 1.0000 1.0000 19" in output
 
 
 def test_evaluate_cli_rejects_too_small_default_split(capsys):

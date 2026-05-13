@@ -24,20 +24,21 @@ REQUIRED_TOP_LEVEL = [
     "event_type",
     "src_ip",
     "dest_ip",
+    "asset_id",
+    "expected_label",
+    "synthetic_ground_truth",
+]
+
+ANALYSIS_TOP_LEVEL = [
     "dest_port",
     "proto",
     "community_id",
     "pcap_filename",
-    "asset_id",
     "asset_role",
     "asset_criticality",
-    "expected_label",
-    "scenario",
-    "synthetic_ground_truth",
-    "review_reason",
 ]
 
-REQUIRED_NESTED = [
+ANALYSIS_NESTED = [
     ("alert", "signature"),
     ("alert", "severity"),
     ("http", "hostname"),
@@ -118,10 +119,6 @@ def validate_event(event: dict) -> list[str]:
         if field not in event:
             errors.append(f"missing field: {field}")
 
-    for parent, child in REQUIRED_NESTED:
-        if not isinstance(event.get(parent), dict) or child not in event[parent]:
-            errors.append(f"missing field: {parent}.{child}")
-
     if "dest_port" in event and not _is_int_in_range(event["dest_port"], 1, 65535):
         errors.append("dest_port must be an integer from 1 to 65535")
 
@@ -173,6 +170,9 @@ def _record(
     valid: bool,
     errors: list[str],
 ) -> dict:
+    if valid:
+        event = _attach_missing_analysis_flags(event)
+
     review_reasons = _review_reasons(event, errors) if valid else list(errors)
 
     return {
@@ -204,6 +204,38 @@ def _review_reasons(event: dict | None, errors: list[str]) -> list[str]:
         reasons.append("prompt-injection-like text present")
 
     return reasons
+
+
+def _attach_missing_analysis_flags(event: dict | None) -> dict | None:
+    if not isinstance(event, dict):
+        return event
+
+    missing_flags = _missing_analysis_fields(event)
+    if not missing_flags:
+        return event
+
+    updated = dict(event)
+    existing_flags = updated.get("missing_field_flags", [])
+    if not isinstance(existing_flags, list):
+        existing_flags = [str(existing_flags)] if existing_flags else []
+
+    merged_flags = list(dict.fromkeys([*existing_flags, *missing_flags]))
+    updated["missing_field_flags"] = merged_flags
+    return updated
+
+
+def _missing_analysis_fields(event: dict) -> list[str]:
+    missing = []
+
+    for field in ANALYSIS_TOP_LEVEL:
+        if field not in event:
+            missing.append(field)
+
+    for parent, child in ANALYSIS_NESTED:
+        if not isinstance(event.get(parent), dict) or child not in event[parent]:
+            missing.append(f"{parent}.{child}")
+
+    return missing
 
 
 def _nested_value(event: dict, parent: str, child: str):
