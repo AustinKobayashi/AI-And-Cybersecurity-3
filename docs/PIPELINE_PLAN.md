@@ -8,7 +8,7 @@ Design a small, safe, auditable AI-assisted detection and response workflow that
 
 The workflow should run on simulated logs, generated events, lab traffic, or controlled PCAP-derived records. It should not connect to a live production network.
 
-Current implementation status: synthetic data, event intake, feature extraction, classification, deterministic risk scoring, and a review gate for bypass and failure handling are implemented. Response routing, evidence logging, and forensic export remain planned.
+Current implementation status: synthetic data, event intake, feature extraction, classification, deterministic risk scoring, a review gate for bypass and failure handling, and simulated response routing are implemented. Evidence logging and forensic export remain planned.
 
 ## Architecture
 
@@ -33,7 +33,7 @@ Simulated Suricata-style events
 | AI-assisted classifier | Classify events into threat categories | Feature records | Label, confidence, and feature reasons |
 | Risk scoring | Prioritize operational risk | Label, confidence, severity, asset criticality, evasion flags | Implemented risk score and severity lane |
 | Deterministic safety checks | Prevent unsafe automation and support analyst oversight | Event quality, model output, risk score | Implemented automation allowed or review required decision |
-| Response routing | Choose safe next action | Safety-check decision | Log-only, review, ticket, or simulated block action |
+| Response routing | Choose safe next action | Safety-check decision | Implemented log-only, review, ticket, or simulated block action |
 | Evidence logging | Preserve the decision trail | Raw event, features, model output, action | Decision log, model metadata, and action record |
 | Forensic export | Bundle one event for review | Saved evidence records | Export package with hash manifest |
 
@@ -86,7 +86,7 @@ The decision log should preserve:
 | Threat classification | Labels for benign, credential access, lateral movement, command and control, exploit attempt, and human review |
 | Logging and evidence preservation | Decision logs, raw-event hashes, model metadata, action records, and analyst override fields |
 | Bypass or evasion handling | Malformed, obfuscated, high-entropy, and prompt-injection-like events are handled by deterministic review checks |
-| Self-healing or response action | Simulated ticket creation, review escalation, and simulated IP blocklist action |
+| Self-healing or response action | Implemented simulated ticket creation, review escalation, and simulated IP blocklist action |
 | Walkthrough document | `docs/WALKTHROUGH_DRAFT.md` is the starting source |
 | Video demo | Out of scope for now |
 

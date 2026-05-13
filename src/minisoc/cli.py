@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
 from collections import Counter
+from pathlib import Path
 
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -15,6 +17,7 @@ from .features import extract_features
 from .guardrails import apply_guardrails
 from .intake import load_event_records, summarize_records
 from .intake import load_events
+from .response import route_response
 from .scoring import score_risk
 
 
@@ -31,6 +34,22 @@ def main(argv: list[str] | None = None) -> int:
         "--train",
         required=True,
         help="path to the labelled JSONL file used for training",
+    )
+
+    respond_parser = subparsers.add_parser(
+        "respond",
+        help="run the simulated response routing workflow",
+    )
+    respond_parser.add_argument("jsonl_path", help="path to the JSONL file to process")
+    respond_parser.add_argument(
+        "--train",
+        required=True,
+        help="path to the labelled JSONL file used for training",
+    )
+    respond_parser.add_argument(
+        "--outputs",
+        default="outputs",
+        help="directory used for simulated response output files",
     )
 
     evaluate_parser = subparsers.add_parser(
@@ -57,6 +76,8 @@ def main(argv: list[str] | None = None) -> int:
         return _validate_command(args.jsonl_path)
     if args.command == "classify":
         return _classify_command(args.jsonl_path, args.train)
+    if args.command == "respond":
+        return _respond_command(args.jsonl_path, args.train, args.outputs)
     if args.command == "evaluate":
         return _evaluate_command(args.jsonl_path, args.test_size, args.seed)
 
@@ -185,25 +206,12 @@ def _evaluate_command(path: str, test_size: float, seed: int) -> int:
 
 
 def _classify_command(path: str, train_path: str) -> int:
-    training_events = load_events(train_path)
-    target_events = load_events(path)
-    training_features = [extract_features(event) for event in training_events]
-    target_features = [extract_features(event) for event in target_events]
-    model_bundle = train_classifier(training_features)
-    classifications = classify_events(target_features, model_bundle)
-    risk_scores = [
-        score_risk(classification, feature_record)
-        for classification, feature_record in zip(classifications, target_features)
-    ]
-    guardrail_results = [
-        apply_guardrails(event, feature_record, classification, risk)
-        for event, feature_record, classification, risk in zip(
-            target_events,
-            target_features,
-            classifications,
-            risk_scores,
-        )
-    ]
+    pipeline = _run_pipeline(path, train_path)
+    training_features = pipeline["training_features"]
+    model_bundle = pipeline["model_bundle"]
+    classifications = pipeline["classifications"]
+    risk_scores = pipeline["risk_scores"]
+    guardrail_results = pipeline["guardrail_results"]
     predicted_counts = Counter(item["predicted_label"] for item in classifications)
     severity_counts = Counter(item["severity"] for item in risk_scores)
     guardrail_flag_counts = Counter(
@@ -255,6 +263,159 @@ def _classify_command(path: str, train_path: str) -> int:
         )
 
     return 0
+
+
+def _respond_command(path: str, train_path: str, outputs_path: str) -> int:
+    pipeline = _run_pipeline(path, train_path)
+    responses = [
+        route_response(event, classification, risk, guardrails)
+        for event, classification, risk, guardrails in zip(
+            pipeline["target_events"],
+            pipeline["classifications"],
+            pipeline["risk_scores"],
+            pipeline["guardrail_results"],
+        )
+    ]
+    action_counts = Counter(response["action"] for response in responses)
+    output_paths = _write_response_outputs(Path(outputs_path), pipeline, responses)
+
+    print(f"Training file: {train_path}")
+    print(f"Respond file: {path}")
+    print(f"Training records: {len(pipeline['training_features'])}")
+    print(f"Processed records: {len(responses)}")
+    print(
+        f"Model: {pipeline['model_bundle']['model_name']} "
+        f"{pipeline['model_bundle']['model_version']}"
+    )
+    print("Action counts:")
+
+    for action, count in sorted(action_counts.items()):
+        print(f"  {action}: {count}")
+
+    print("Output paths:")
+    print(f"  Review queue: {output_paths['review_queue']}")
+    print(f"  Tickets directory: {output_paths['tickets_dir']}")
+    print(f"  Simulated blocklist: {output_paths['simulated_blocklist']}")
+
+    return 0
+
+
+def _run_pipeline(path: str, train_path: str) -> dict:
+    training_events = load_events(train_path)
+    target_events = load_events(path)
+    training_features = [extract_features(event) for event in training_events]
+    target_features = [extract_features(event) for event in target_events]
+    model_bundle = train_classifier(training_features)
+    classifications = classify_events(target_features, model_bundle)
+    risk_scores = [
+        score_risk(classification, feature_record)
+        for classification, feature_record in zip(classifications, target_features)
+    ]
+    guardrail_results = [
+        apply_guardrails(event, feature_record, classification, risk)
+        for event, feature_record, classification, risk in zip(
+            target_events,
+            target_features,
+            classifications,
+            risk_scores,
+        )
+    ]
+
+    return {
+        "training_features": training_features,
+        "target_events": target_events,
+        "target_features": target_features,
+        "model_bundle": model_bundle,
+        "classifications": classifications,
+        "risk_scores": risk_scores,
+        "guardrail_results": guardrail_results,
+    }
+
+
+def _write_response_outputs(
+    outputs_dir: Path,
+    pipeline: dict,
+    responses: list[dict],
+) -> dict:
+    review_dir = outputs_dir / "review_queue"
+    tickets_dir = outputs_dir / "tickets"
+    review_dir.mkdir(parents=True, exist_ok=True)
+    tickets_dir.mkdir(parents=True, exist_ok=True)
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+
+    review_path = review_dir / "review_queue.jsonl"
+    blocklist_path = outputs_dir / "simulated_blocklist.txt"
+
+    records = [
+        _response_record(event, classification, risk, guardrails, response)
+        for event, classification, risk, guardrails, response in zip(
+            pipeline["target_events"],
+            pipeline["classifications"],
+            pipeline["risk_scores"],
+            pipeline["guardrail_results"],
+            responses,
+        )
+    ]
+
+    with review_path.open("w", encoding="utf-8") as handle:
+        for record in records:
+            if record["action"] == "review_queue":
+                handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+    for record in records:
+        if record["action"] != "create_ticket":
+            continue
+        ticket_path = tickets_dir / f"{_safe_filename(record['event_id'])}.json"
+        ticket_path.write_text(
+            json.dumps(record, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    with blocklist_path.open("w", encoding="utf-8") as handle:
+        for record in records:
+            if record["action"] == "simulated_block_ip" and record["target"]:
+                handle.write(f"{record['target']}\n")
+
+    return {
+        "review_queue": str(review_path),
+        "tickets_dir": str(tickets_dir),
+        "simulated_blocklist": str(blocklist_path),
+    }
+
+
+def _response_record(
+    event: dict,
+    classification: dict,
+    risk: dict,
+    guardrails: dict,
+    response: dict,
+) -> dict:
+    return {
+        "event_id": response.get("event_id", ""),
+        "timestamp": event.get("timestamp", "") if isinstance(event, dict) else "",
+        "src_ip": event.get("src_ip", "") if isinstance(event, dict) else "",
+        "dest_ip": event.get("dest_ip", "") if isinstance(event, dict) else "",
+        "predicted_label": classification.get("predicted_label", ""),
+        "confidence": classification.get("confidence", 0.0),
+        "risk_score": risk.get("risk_score", 0),
+        "severity": risk.get("severity", ""),
+        "automation_allowed": response.get("automation_allowed", False),
+        "review_required": response.get("review_required", False),
+        "guardrail_flags": guardrails.get("guardrail_flags", []),
+        "action": response.get("action", ""),
+        "action_taken": response.get("action_taken", ""),
+        "target": response.get("target", ""),
+        "reason_codes": response.get("reason_codes", []),
+        "simulated_only": True,
+    }
+
+
+def _safe_filename(value: str) -> str:
+    safe = "".join(
+        character if character.isalnum() or character in {"-", "_"} else "_"
+        for character in str(value)
+    )
+    return safe or "event"
 
 
 if __name__ == "__main__":

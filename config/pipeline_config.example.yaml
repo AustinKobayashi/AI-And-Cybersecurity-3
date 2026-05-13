@@ -1,5 +1,5 @@
-# Example configuration for the planned mini-SOC pipeline.
-# This is a template only. The pipeline implementation has not been added yet.
+# Example configuration for the mini-SOC pipeline.
+# This is a template only. The CLI does not parse this file yet.
 
 run:
   mode: "offline_demo"
@@ -37,4 +37,3 @@ guardrails:
   route_obfuscated_fields_to_review: true
   route_prompt_injection_like_text_to_review: true
   minimum_classifier_confidence_for_automation: 0.75
-
