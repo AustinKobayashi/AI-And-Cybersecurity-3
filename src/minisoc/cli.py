@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 
 from .classifier import classify_events, train_classifier
 from .features import extract_features
+from .guardrails import apply_guardrails
 from .intake import load_event_records, summarize_records
 from .intake import load_events
 from .scoring import score_risk
@@ -194,8 +195,22 @@ def _classify_command(path: str, train_path: str) -> int:
         score_risk(classification, feature_record)
         for classification, feature_record in zip(classifications, target_features)
     ]
+    guardrail_results = [
+        apply_guardrails(event, feature_record, classification, risk)
+        for event, feature_record, classification, risk in zip(
+            target_events,
+            target_features,
+            classifications,
+            risk_scores,
+        )
+    ]
     predicted_counts = Counter(item["predicted_label"] for item in classifications)
     severity_counts = Counter(item["severity"] for item in risk_scores)
+    guardrail_flag_counts = Counter(
+        flag
+        for result in guardrail_results
+        for flag in result["guardrail_flags"]
+    )
 
     print(f"Training file: {train_path}")
     print(f"Classify file: {path}")
@@ -211,13 +226,31 @@ def _classify_command(path: str, train_path: str) -> int:
     for severity, count in sorted(severity_counts.items()):
         print(f"  {severity}: {count}")
 
+    automation_allowed = sum(
+        1 for result in guardrail_results if result["automation_allowed"]
+    )
+    review_required = sum(1 for result in guardrail_results if result["review_required"])
+    print(f"Automation allowed: {automation_allowed}")
+    print(f"Review required: {review_required}")
+
+    if guardrail_flag_counts:
+        print("Guardrail flags:")
+        for flag, count in sorted(guardrail_flag_counts.items()):
+            print(f"  {flag}: {count}")
+
     print("Sample classifications:")
-    for item, risk in zip(classifications[:10], risk_scores[:10]):
+    for item, risk, guardrails in zip(
+        classifications[:10],
+        risk_scores[:10],
+        guardrail_results[:10],
+    ):
         print(
             f"  {item['event_id']}: {item['predicted_label']} "
             f"confidence={item['confidence']:.4f} "
             f"risk={risk['risk_score']} "
             f"severity={risk['severity']} "
+            f"automation_allowed={str(guardrails['automation_allowed']).lower()} "
+            f"review_required={str(guardrails['review_required']).lower()} "
             f"expected={item['expected_label']}"
         )
 

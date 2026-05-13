@@ -125,10 +125,18 @@ def test_classify_cli_reports_risk_scores(capsys):
     assert "Severity counts:" in output
     assert "  high: 15" in output
     assert "  low: 5" in output
-    assert "demo-0001: benign confidence=1.0000 risk=13 severity=low expected=benign" in output
+    assert "Automation allowed: 17" in output
+    assert "Review required: 3" in output
+    assert "Guardrail flags:" in output
+    assert "  human_review_label: 3" in output
+    assert (
+        "demo-0001: benign confidence=1.0000 risk=13 severity=low "
+        "automation_allowed=true review_required=false expected=benign"
+    ) in output
     assert (
         "demo-0008: credential_access confidence=1.0000 "
-        "risk=71 severity=high expected=credential_access"
+        "risk=71 severity=high automation_allowed=true "
+        "review_required=false expected=credential_access"
     ) in output
 
 

@@ -10,13 +10,13 @@ Simulated Suricata-style events
   -> Feature extraction
   -> AI-assisted classification
   -> Risk scoring
-  -> Deterministic guardrails
+  -> Deterministic safety checks
   -> Response routing
   -> Evidence preservation
   -> Forensic export
 ```
 
-The project currently includes synthetic data, event intake, validation, feature extraction, classification, and deterministic risk scoring. Later stages such as guardrails, response routing, and evidence export are still planned.
+The project currently includes synthetic data, event intake, validation, feature extraction, classification, deterministic risk scoring, and a deterministic review gate for bypass and failure handling. Later stages such as response routing and evidence export are still planned.
 
 ## Safety Boundary
 
@@ -64,7 +64,7 @@ Run only the feature extraction tests:
 python -m pytest tests\test_features.py
 ```
 
-Classify and risk-score the demo dataset after training on the combined synthetic dataset:
+Classify, risk-score, and apply deterministic safety checks to the demo dataset after training on the combined synthetic dataset:
 
 ```powershell
 python -m minisoc.cli classify data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl
@@ -83,7 +83,7 @@ python -m minisoc.cli evaluate data\raw\synthetic_minisoc_events_combined_2200.e
 3. Extract explainable security features.
 4. Classify each event with a bounded, explainable model.
 5. Convert model output and context into a risk score.
-6. Apply deterministic guardrails before any response action.
+6. Apply deterministic safety checks before any response action.
 7. Route the event to log-only, review, ticket creation, or simulated blocking.
 8. Preserve raw evidence, model metadata, decision records, and action records.
 9. Export a forensic evidence package for one selected event.

@@ -4,11 +4,11 @@ This document is the project-local planning source for the proposed AI-supported
 
 ## Objective
 
-Design a small, safe, auditable AI-assisted detection and response workflow that demonstrates event intake, classification, risk scoring, guardrails, response routing, and forensic readiness.
+Design a small, safe, auditable AI-assisted detection and response workflow that demonstrates event intake, classification, risk scoring, deterministic safety checks, response routing, and forensic readiness.
 
 The workflow should run on simulated logs, generated events, lab traffic, or controlled PCAP-derived records. It should not connect to a live production network.
 
-Current implementation status: synthetic data, event intake, feature extraction, classification, and deterministic risk scoring are implemented. Guardrails, response routing, evidence logging, and forensic export remain planned.
+Current implementation status: synthetic data, event intake, feature extraction, classification, deterministic risk scoring, and a review gate for bypass and failure handling are implemented. Response routing, evidence logging, and forensic export remain planned.
 
 ## Architecture
 
@@ -18,7 +18,7 @@ Simulated Suricata-style events
   -> Feature extraction
   -> AI-assisted classification
   -> Risk scoring
-  -> Deterministic guardrails
+  -> Deterministic safety checks
   -> Response routing
   -> Evidence preservation
   -> Forensic export
@@ -32,8 +32,8 @@ Simulated Suricata-style events
 | Feature extraction | Turn events into explainable security signals | Validated events | Normalized feature records and reason codes |
 | AI-assisted classifier | Classify events into threat categories | Feature records | Label, confidence, and feature reasons |
 | Risk scoring | Prioritize operational risk | Label, confidence, severity, asset criticality, evasion flags | Implemented risk score and severity lane |
-| Guardrails | Prevent unsafe automation | Event quality, model output, risk score | Automation allowed or review required |
-| Response routing | Choose safe next action | Guardrailed decision | Log-only, review, ticket, or simulated block action |
+| Deterministic safety checks | Prevent unsafe automation and support analyst oversight | Event quality, model output, risk score | Implemented automation allowed or review required decision |
+| Response routing | Choose safe next action | Safety-check decision | Log-only, review, ticket, or simulated block action |
 | Evidence logging | Preserve the decision trail | Raw event, features, model output, action | Decision log, model metadata, and action record |
 | Forensic export | Bundle one event for review | Saved evidence records | Export package with hash manifest |
 
@@ -52,7 +52,7 @@ Simulated Suricata-style events
 - `log_only`: for low-risk events that should be retained but do not require action.
 - `review_queue`: for uncertain, malformed, evasive, or conflicting events.
 - `create_ticket`: for medium or high risk events requiring SOC follow-up.
-- `simulated_block_ip`: for high-confidence malicious activity when guardrails allow automation.
+- `simulated_block_ip`: for high-confidence malicious activity when safety checks allow automation.
 
 ## Evidence Fields
 
@@ -85,7 +85,7 @@ The decision log should preserve:
 | Event intake pipeline | Simulated Suricata-style `eve.json` event intake |
 | Threat classification | Labels for benign, credential access, lateral movement, command and control, exploit attempt, and human review |
 | Logging and evidence preservation | Decision logs, raw-event hashes, model metadata, action records, and analyst override fields |
-| Bypass or evasion handling | Malformed, obfuscated, high-entropy, and prompt-injection-like events route to review |
+| Bypass or evasion handling | Malformed, obfuscated, high-entropy, and prompt-injection-like events are handled by deterministic review checks |
 | Self-healing or response action | Simulated ticket creation, review escalation, and simulated IP blocklist action |
 | Walkthrough document | `docs/WALKTHROUGH_DRAFT.md` is the starting source |
 | Video demo | Out of scope for now |
