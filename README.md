@@ -16,7 +16,7 @@ Simulated Suricata-style events
   -> Forensic export
 ```
 
-The project currently includes synthetic data, event intake, validation, and feature extraction. Later stages such as classification, risk scoring, guardrails, response routing, and evidence export are still planned.
+The project currently includes synthetic data, event intake, validation, feature extraction, and classification. Later stages such as risk scoring, guardrails, response routing, and evidence export are still planned.
 
 ## Safety Boundary
 
@@ -62,6 +62,18 @@ Run only the feature extraction tests:
 
 ```powershell
 python -m pytest tests\test_features.py
+```
+
+Classify the demo dataset after training on the full synthetic dataset:
+
+```powershell
+python -m minisoc.cli classify data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_2000.eve.jsonl
+```
+
+Evaluate classifier performance with a 20 percent holdout split:
+
+```powershell
+python -m minisoc.cli evaluate data\raw\synthetic_minisoc_events_2000.eve.jsonl
 ```
 
 ## Planned Demo Flow
