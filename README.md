@@ -1,6 +1,6 @@
 # AI And Cybersecurity 3 Capstone
 
-This folder contains the boilerplate for the Technical / Engineering Track capstone project.
+This folder contains the Technical / Engineering Track capstone project.
 
 The planned project is a simulated mini-SOC workflow:
 
@@ -16,7 +16,7 @@ Simulated Suricata-style events
   -> Forensic export
 ```
 
-The scaffold is intentionally not a finished pipeline. It provides the project layout, planning documents, config templates, sample data, and source stubs needed to implement the plan later.
+The project currently includes synthetic data, event intake, validation, and feature extraction. Later stages such as classification, risk scoring, guardrails, response routing, and evidence export are still planned.
 
 ## Safety Boundary
 
@@ -56,6 +56,12 @@ Run the tests:
 
 ```powershell
 python -m pytest
+```
+
+Run only the feature extraction tests:
+
+```powershell
+python -m pytest tests\test_features.py
 ```
 
 ## Planned Demo Flow
