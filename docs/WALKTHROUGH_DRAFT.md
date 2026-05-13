@@ -33,6 +33,7 @@ Explain what evidence is preserved:
 - Action record.
 - Analyst override field.
 - SHA-256 manifest.
+- Local forensic export package for one selected event.
 
 ## 6. Known Limitations
 
@@ -41,7 +42,7 @@ Explain what evidence is preserved:
 - No real firewall or endpoint action.
 - No production SIEM or SOAR integration.
 - No LLM in the baseline version.
-- Forensic export is still planned.
+- Forensic export packages are local demo artifacts under `outputs/evidence_exports/`.
 
 ## Integrity Statement
 

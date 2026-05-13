@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 
 from .classifier import classify_events, train_classifier
 from .evidence import build_evidence_record
+from .exporter import ExportEvidenceError, export_evidence_package
 from .features import extract_features
 from .guardrails import apply_guardrails
 from .intake import load_event_records, summarize_records
@@ -53,6 +54,31 @@ def main(argv: list[str] | None = None) -> int:
         help="directory used for simulated response output files",
     )
 
+    export_parser = subparsers.add_parser(
+        "export-evidence",
+        help="export a local evidence package for one event",
+    )
+    export_parser.add_argument(
+        "--event-id",
+        required=True,
+        help="event ID to export",
+    )
+    export_parser.add_argument(
+        "--events",
+        required=True,
+        help="path to the original JSONL event file",
+    )
+    export_parser.add_argument(
+        "--decisions",
+        required=True,
+        help="path to the generated decision log JSONL file",
+    )
+    export_parser.add_argument(
+        "--outputs",
+        default="outputs",
+        help="directory used for evidence export output files",
+    )
+
     evaluate_parser = subparsers.add_parser(
         "evaluate",
         help="evaluate classifier performance with a stratified holdout split",
@@ -79,6 +105,13 @@ def main(argv: list[str] | None = None) -> int:
         return _classify_command(args.jsonl_path, args.train)
     if args.command == "respond":
         return _respond_command(args.jsonl_path, args.train, args.outputs)
+    if args.command == "export-evidence":
+        return _export_evidence_command(
+            args.event_id,
+            args.events,
+            args.decisions,
+            args.outputs,
+        )
     if args.command == "evaluate":
         return _evaluate_command(args.jsonl_path, args.test_size, args.seed)
 
@@ -298,6 +331,32 @@ def _respond_command(path: str, train_path: str, outputs_path: str) -> int:
     print(f"  Review queue: {output_paths['review_queue']}")
     print(f"  Tickets directory: {output_paths['tickets_dir']}")
     print(f"  Simulated blocklist: {output_paths['simulated_blocklist']}")
+
+    return 0
+
+
+def _export_evidence_command(
+    event_id: str,
+    events_path: str,
+    decisions_path: str,
+    outputs_path: str,
+) -> int:
+    try:
+        export = export_evidence_package(
+            event_id,
+            events_path,
+            decisions_path,
+            outputs_path,
+        )
+    except ExportEvidenceError as exc:
+        print(f"Error: {exc}")
+        return 1
+
+    print(f"Event ID: {export['event_id']}")
+    print(f"Export directory: {export['export_dir']}")
+    print("Files written:")
+    for path in export["files"]:
+        print(f"  {path}")
 
     return 0
 
