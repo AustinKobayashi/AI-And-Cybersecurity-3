@@ -13,6 +13,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from sklearn.model_selection import train_test_split
 
 from .classifier import classify_events, train_classifier
+from .evidence import build_evidence_record
 from .features import extract_features
 from .guardrails import apply_guardrails
 from .intake import load_event_records, summarize_records
@@ -293,6 +294,7 @@ def _respond_command(path: str, train_path: str, outputs_path: str) -> int:
         print(f"  {action}: {count}")
 
     print("Output paths:")
+    print(f"  Decision log: {output_paths['decision_log']}")
     print(f"  Review queue: {output_paths['review_queue']}")
     print(f"  Tickets directory: {output_paths['tickets_dir']}")
     print(f"  Simulated blocklist: {output_paths['simulated_blocklist']}")
@@ -338,11 +340,14 @@ def _write_response_outputs(
     responses: list[dict],
 ) -> dict:
     review_dir = outputs_dir / "review_queue"
+    decision_dir = outputs_dir / "decision_logs"
     tickets_dir = outputs_dir / "tickets"
     review_dir.mkdir(parents=True, exist_ok=True)
+    decision_dir.mkdir(parents=True, exist_ok=True)
     tickets_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
 
+    decision_path = decision_dir / "decisions.jsonl"
     review_path = review_dir / "review_queue.jsonl"
     blocklist_path = outputs_dir / "simulated_blocklist.txt"
 
@@ -362,6 +367,32 @@ def _write_response_outputs(
             if record["action"] == "review_queue":
                 handle.write(json.dumps(record, sort_keys=True) + "\n")
 
+    evidence_records = [
+        build_evidence_record(
+            event,
+            {
+                "model": pipeline["model_bundle"],
+                "features": feature_record,
+                "classification": classification,
+                "risk": risk,
+                "guardrails": guardrails,
+                "response": response,
+            },
+        )
+        for event, feature_record, classification, risk, guardrails, response in zip(
+            pipeline["target_events"],
+            pipeline["target_features"],
+            pipeline["classifications"],
+            pipeline["risk_scores"],
+            pipeline["guardrail_results"],
+            responses,
+        )
+    ]
+
+    with decision_path.open("w", encoding="utf-8") as handle:
+        for record in evidence_records:
+            handle.write(json.dumps(record, sort_keys=True) + "\n")
+
     for record in records:
         if record["action"] != "create_ticket":
             continue
@@ -377,6 +408,7 @@ def _write_response_outputs(
                 handle.write(f"{record['target']}\n")
 
     return {
+        "decision_log": str(decision_path),
         "review_queue": str(review_path),
         "tickets_dir": str(tickets_dir),
         "simulated_blocklist": str(blocklist_path),

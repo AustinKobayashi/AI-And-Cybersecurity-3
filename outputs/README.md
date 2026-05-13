@@ -6,7 +6,7 @@ The `.gitignore` excludes generated output files while keeping the folder struct
 
 Output categories:
 
-- `decision_logs/`: JSONL decision records.
+- `decision_logs/`: JSONL decision records from the simulated response workflow.
 - `review_queue/`: events requiring analyst review from the simulated response workflow.
 - `tickets/`: simulated incident tickets from the response workflow.
 - `evidence_exports/`: forensic export packages.

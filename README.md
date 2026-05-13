@@ -16,7 +16,7 @@ Simulated Suricata-style events
   -> Forensic export
 ```
 
-The project currently includes synthetic data, event intake, validation, feature extraction, classification, deterministic risk scoring, a deterministic review gate for bypass and failure handling, and simulated response routing. Later stages such as evidence logging and forensic export are still planned.
+The project currently includes synthetic data, event intake, validation, feature extraction, classification, deterministic risk scoring, a deterministic review gate for bypass and failure handling, simulated response routing, and evidence logging. Forensic export is still planned.
 
 ## Safety Boundary
 
@@ -70,7 +70,7 @@ Classify, risk-score, and apply deterministic safety checks to the demo dataset 
 python -m minisoc.cli classify data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl
 ```
 
-Run the simulated response workflow and write local demo outputs:
+Run the simulated response workflow and write local demo outputs, including the decision log:
 
 ```powershell
 python -m minisoc.cli respond data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl --outputs outputs

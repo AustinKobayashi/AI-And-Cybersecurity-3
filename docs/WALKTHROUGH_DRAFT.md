@@ -16,7 +16,7 @@ Log Source -> Parser -> Feature Extractor -> Classifier -> Scoring Engine -> Rev
 
 ## 3. Model Or Logic Explanation
 
-Describe the implemented event labels, model confidence, deterministic risk score, severity lanes, reason codes, review-gate decisions, and simulated response routing.
+Describe the implemented event labels, model confidence, deterministic risk score, severity lanes, reason codes, review-gate decisions, simulated response routing, and evidence logging.
 
 ## 4. Bypass And Failure Handling
 
@@ -41,7 +41,7 @@ Explain what evidence is preserved:
 - No real firewall or endpoint action.
 - No production SIEM or SOAR integration.
 - No LLM in the baseline version.
-- Evidence logging and forensic export are still planned.
+- Forensic export is still planned.
 
 ## Integrity Statement
 

@@ -8,7 +8,7 @@ Design a small, safe, auditable AI-assisted detection and response workflow that
 
 The workflow should run on simulated logs, generated events, lab traffic, or controlled PCAP-derived records. It should not connect to a live production network.
 
-Current implementation status: synthetic data, event intake, feature extraction, classification, deterministic risk scoring, a review gate for bypass and failure handling, and simulated response routing are implemented. Evidence logging and forensic export remain planned.
+Current implementation status: synthetic data, event intake, feature extraction, classification, deterministic risk scoring, a review gate for bypass and failure handling, simulated response routing, and evidence logging are implemented. Forensic export remains planned.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ Simulated Suricata-style events
 | Risk scoring | Prioritize operational risk | Label, confidence, severity, asset criticality, evasion flags | Implemented risk score and severity lane |
 | Deterministic safety checks | Prevent unsafe automation and support analyst oversight | Event quality, model output, risk score | Implemented automation allowed or review required decision |
 | Response routing | Choose safe next action | Safety-check decision | Implemented log-only, review, ticket, or simulated block action |
-| Evidence logging | Preserve the decision trail | Raw event, features, model output, action | Decision log, model metadata, and action record |
+| Evidence logging | Preserve the decision trail | Raw event, features, model output, action | Implemented decision log, model metadata, and action record |
 | Forensic export | Bundle one event for review | Saved evidence records | Export package with hash manifest |
 
 ## Planned Labels

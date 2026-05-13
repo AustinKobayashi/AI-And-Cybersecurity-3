@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import json
+
 import pytest
 
 from minisoc.classifier import classify_events, train_classifier
@@ -145,14 +147,26 @@ def test_respond_cli_writes_simulated_outputs(tmp_path, capsys):
     assert "  simulated_block_ip: 4" in output
 
     review_path = tmp_path / "review_queue" / "review_queue.jsonl"
+    decision_path = tmp_path / "decision_logs" / "decisions.jsonl"
     ticket_paths = sorted((tmp_path / "tickets").glob("*.json"))
     blocklist_path = tmp_path / "simulated_blocklist.txt"
 
     assert review_path.exists()
+    assert decision_path.exists()
     assert blocklist_path.exists()
     assert len(review_path.read_text(encoding="utf-8").splitlines()) == 3
     assert len(ticket_paths) == 8
     assert len(blocklist_path.read_text(encoding="utf-8").splitlines()) == 4
+
+    decisions = [
+        json.loads(line)
+        for line in decision_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(decisions) == 20
+    assert all("action_taken" in item for item in decisions)
+    assert all("risk_score" in item for item in decisions)
+    assert all("predicted_label" in item for item in decisions)
+    assert all(item["raw_event_sha256"] for item in decisions)
 
 
 def _routed_demo_events() -> dict:
