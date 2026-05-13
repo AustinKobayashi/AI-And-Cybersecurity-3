@@ -16,7 +16,7 @@ Simulated Suricata-style events
   -> Forensic export
 ```
 
-The scaffold is intentionally not a finished pipeline. It provides the project layout, planning documents, config templates, sample data placeholders, and source stubs needed to implement the plan later.
+The scaffold is intentionally not a finished pipeline. It provides the project layout, planning documents, config templates, sample data, and source stubs needed to implement the plan later.
 
 ## Safety Boundary
 
@@ -34,8 +34,28 @@ data/sample/             Small safe sample events and asset inventory
 docs/                    Planning and walkthrough source documents
 models/                  Future trained model metadata and artefacts
 outputs/                 Generated demo outputs, ignored by git
-src/minisoc/             Python package stubs for future implementation
-tests/                   Test stubs for future implementation
+src/minisoc/             Python package code for the mini-SOC workflow
+tests/                   Tests for implemented workflow pieces
+```
+
+## CLI Commands
+
+Validate the full synthetic dataset:
+
+```powershell
+python -m minisoc.cli validate data\raw\synthetic_minisoc_events_2000.eve.jsonl
+```
+
+Validate the small demo dataset:
+
+```powershell
+python -m minisoc.cli validate data\sample\demo_scenario_events_20.eve.jsonl
+```
+
+Run the tests:
+
+```powershell
+python -m pytest
 ```
 
 ## Planned Demo Flow
@@ -55,4 +75,3 @@ tests/                   Test stubs for future implementation
 - [Pipeline Plan](docs/PIPELINE_PLAN.md)
 - [Walkthrough Draft](docs/WALKTHROUGH_DRAFT.md)
 - [Architecture Diagram](docs/architecture.mmd)
-

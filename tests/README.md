@@ -1,6 +1,12 @@
 # Tests
 
-This folder is reserved for future tests.
+This folder contains tests for implemented workflow pieces.
+
+Run tests from the capstone project root:
+
+```powershell
+python -m pytest
+```
 
 Planned test areas:
 
@@ -11,4 +17,3 @@ Planned test areas:
 - Guardrail routing.
 - Response action selection.
 - Evidence log fields and hash manifest checks.
-

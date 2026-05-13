@@ -24,6 +24,20 @@ Do not use these files as evidence from real systems. Do not connect this projec
 - `raw/synthetic_minisoc_label_distribution.csv`: label counts and percentages for the full and demo datasets.
 - `raw/`: location for generated events or controlled PCAP-derived logs.
 
+## Validation Commands
+
+Run these from the capstone project root:
+
+```powershell
+python -m minisoc.cli validate data\raw\synthetic_minisoc_events_2000.eve.jsonl
+python -m minisoc.cli validate data\sample\demo_scenario_events_20.eve.jsonl
+```
+
+Expected summaries:
+
+- Full dataset: 2,000 total records, 2,000 valid records, 60 review-required records.
+- Demo dataset: 20 total records, 20 valid records, 3 review-required records.
+
 ## Full Dataset Class Distribution
 
 | Label | Count | Percent |
