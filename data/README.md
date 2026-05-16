@@ -1,18 +1,18 @@
 # Capstone Data
 
-## AI-Generated Dataset Notice
+## AI Generated Dataset Notice
 
-The datasets in this folder are synthetic AI-generated security telemetry created for this capstone project. They are not production logs, live network captures, real malware traffic, or evidence from a real incident. Labels such as `benign`, `credential_access`, `lateral_movement`, `command_and_control`, `exploit_attempt`, and `needs_human_review` are proxy labels for the simulation and should be treated as demonstration ground truth only.
+The datasets in this folder are synthetic AI generated security telemetry created for this capstone project. They are not production logs, live network captures, real malware traffic, or evidence from a real incident. Labels such as `benign`, `credential_access`, `lateral_movement`, `command_and_control`, `exploit_attempt`, and `needs_human_review` are proxy labels for the simulation and should be treated as demonstration ground truth only.
 
-The records are intended for capstone demonstration, future local model training experiments, and evaluation only.
+The records are intended for capstone demonstration, local classifier training, evaluation, walkthrough support, and video narration only.
 
 ## Safety Boundary
 
-Use simulated or controlled data only.
+Use simulated or controlled lab data only.
 
-The baseline project should use Suricata-style line-delimited JSON events. These records should look like EVE JSON logs, but they should not come from a live production network.
+The project uses Suricata-style line-delimited JSON events. These records look like EVE JSON logs, but they do not come from a live production network.
 
-Do not use these files as evidence from real systems. Do not connect this project to a live production network, real firewall, production SIEM, endpoint isolation tool, or real containment workflow.
+Do not use these files as evidence from real systems. Do not connect this project to a live production network, real firewall, production SIEM, production SOAR platform, endpoint isolation tool, or real containment workflow.
 
 ## Included Files
 
@@ -21,16 +21,16 @@ Do not use these files as evidence from real systems. Do not connect this projec
 - `sample/asset_inventory.example.csv`: example asset criticality metadata.
 - `raw/synthetic_minisoc_events_clean_2000.eve.jsonl`: 2,000-record clean source dataset that proves the base simulation works.
 - `raw/synthetic_minisoc_events_noisy_200.eve.jsonl`: 200-record noisy source dataset with harder but correctly labelled examples.
-- `raw/synthetic_minisoc_events_combined_2200.eve.jsonl`: shuffled 2,200-record combined dataset for classifier training and evaluation.
+- `raw/synthetic_minisoc_events_combined_2200.eve.jsonl`: shuffled 2,200-record combined dataset used as the primary classifier training and evaluation dataset.
 - `raw/synthetic_minisoc_dataset_manifest.json`: manifest with generation metadata, schema, safety notes, class counts, and SHA-256 hashes.
 - `raw/synthetic_minisoc_label_distribution.csv`: label counts and percentages for the clean, noisy, combined, and demo datasets.
-- `raw/`: location for generated events or controlled PCAP-derived logs.
+- `raw/`: location for the main synthetic datasets and any future controlled lab logs.
 
 ## Dataset Roles
 
 - Clean source dataset: proves the base simulation works.
 - Noisy source dataset: adds realistic ambiguity, weaker class signals, and 80 records with missing analysis fields.
-- Combined dataset: primary classifier training and evaluation dataset.
+- Combined dataset: primary classifier training and evaluation dataset for the current pipeline.
 - Demo dataset: predictable walkthrough and video dataset.
 
 ## Validation Commands
@@ -91,7 +91,7 @@ Expected summaries:
 | `exploit_attempt` | 3 |
 | `needs_human_review` | 3 |
 
-## Event Categories To Cover
+## Event Categories Covered
 
 - Benign traffic.
 - Credential access.

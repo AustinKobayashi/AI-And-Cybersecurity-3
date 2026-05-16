@@ -1,44 +1,52 @@
 # AI And Cybersecurity 3 Capstone
 
-This folder contains the Technical / Engineering Track capstone project.
+This folder contains the Technical / Engineering Track capstone project. It is a local mini-SOC demonstration that uses AI generated synthetic Suricata-style telemetry.
 
-The planned project is a simulated mini-SOC workflow:
+The project is a simulated mini-SOC workflow:
 
 ```text
-Simulated Suricata-style events
-  -> Event intake
+AI generated synthetic Suricata-style events
+  -> Event intake and validation
   -> Feature extraction
-  -> AI-assisted classification
+  -> Decision tree classification
   -> Risk scoring
   -> Deterministic safety checks
-  -> Response routing
-  -> Evidence preservation
-  -> Forensic export
+  -> Simulated response routing
+  -> Decision logging
+  -> Forensic evidence export
 ```
 
-The project currently includes synthetic data, event intake, validation, feature extraction, classification, deterministic risk scoring, a deterministic review gate for bypass and failure handling, simulated response routing, evidence logging, and forensic export.
+The project includes synthetic datasets, event intake, feature extraction, a bounded classifier trained in memory, deterministic risk scoring, a review gate for bypass and failure handling, simulated response routing, evidence logging, and forensic export.
 
 ## Safety Boundary
 
+- Use AI generated synthetic telemetry or controlled lab data only.
 - Do not connect this project to a live production network.
-- Do not process real malware.
-- Do not trigger real firewall, endpoint isolation, account disablement, or production response actions.
-- Use simulated logs, generated events, lab traffic, or controlled PCAPs only.
+- Do not process real malware, production logs, or evidence from a real incident.
+- Do not connect to a real firewall, endpoint isolation tool, account disablement workflow, production SIEM, or production SOAR platform.
+- Treat all response actions as local simulations. Tickets, review records, and blocklist entries are files written under `outputs/`.
 
 ## Project Layout
 
 ```text
-config/                  Example pipeline configuration
-data/raw/                Future generated or controlled input data
-data/sample/             Small safe sample events and asset inventory
+data/raw/                AI generated synthetic training and evaluation datasets
+data/sample/             Small demo events and example asset inventory
 docs/                    Planning and walkthrough source documents
-models/                  Future trained model metadata and artefacts
-outputs/                 Generated demo outputs, ignored by git
-src/minisoc/             Python package code for the mini-SOC workflow
-tests/                   Tests for implemented workflow pieces
+minisoc/                 Root wrappers for `python -m minisoc.cli`
+outputs/                 Local demo outputs, with generated files ignored by git
+src/minisoc/             Mini-SOC pipeline implementation
+tests/                   Pytest suite for the implemented workflow
+pyproject.toml           Project metadata and pytest configuration
+requirements.txt         Python dependencies for running the project and tests
 ```
 
 ## CLI Commands
+
+Install the Python dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
 
 Validate the combined synthetic dataset:
 
@@ -64,19 +72,19 @@ Run only the feature extraction tests:
 python -m pytest tests\test_features.py
 ```
 
-Classify, risk-score, and apply deterministic safety checks to the demo dataset after training on the combined synthetic dataset:
+Classify, score risk, and apply deterministic safety checks to the demo dataset after training on the combined synthetic dataset:
 
 ```powershell
 python -m minisoc.cli classify data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl
 ```
 
-Run the simulated response workflow and write local demo outputs, including the decision log:
+Run the simulated response workflow and write local demo outputs:
 
 ```powershell
 python -m minisoc.cli respond data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl --outputs outputs
 ```
 
-Export a local forensic evidence package for one selected event after running `respond`:
+Export a local forensic evidence package for one selected event. Run `respond` first so the decision log exists:
 
 ```powershell
 python -m minisoc.cli export-evidence --event-id demo-0008 --events data\sample\demo_scenario_events_20.eve.jsonl --decisions outputs\decision_logs\decisions.jsonl --outputs outputs
@@ -87,21 +95,3 @@ Evaluate classifier performance with a 20 percent holdout split:
 ```powershell
 python -m minisoc.cli evaluate data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl
 ```
-
-## Planned Demo Flow
-
-1. Load simulated Suricata-style `eve.json` events.
-2. Validate and normalize the records.
-3. Extract explainable security features.
-4. Classify each event with a bounded, explainable model.
-5. Convert model output and context into a risk score.
-6. Apply deterministic safety checks before any response action.
-7. Route the event to log-only, review, ticket creation, or simulated blocking.
-8. Preserve raw evidence, model metadata, decision records, and action records.
-9. Export a forensic evidence package for one selected event.
-
-## Key Documents
-
-- [Pipeline Plan](docs/PIPELINE_PLAN.md)
-- [Walkthrough Draft](docs/WALKTHROUGH_DRAFT.md)
-- [Architecture Diagram](docs/architecture.mmd)

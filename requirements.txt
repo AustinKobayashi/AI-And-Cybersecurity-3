@@ -1,7 +1,5 @@
-# Runtime dependencies planned for the future implementation.
-# The current scaffold does not require these packages until code is added.
-numpy
+# Runtime dependency for classification and evaluation.
 scikit-learn
-pydantic
-typer
 
+# Test runner used by the included test suite.
+pytest

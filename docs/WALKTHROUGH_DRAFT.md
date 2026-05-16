@@ -1,24 +1,28 @@
 # Technical Walkthrough: Simulated Mini-SOC Pipeline
 
+Name: Austin Kobayashi
+
 ## 1. Design Rationale
 
-For this capstone, I built a small simulated SOC pipeline that shows how an AI-supported detection and response workflow could operate without touching real systems. The project uses AI-generated synthetic Suricata-style telemetry, not live traffic, real malware, production firewall rules, endpoint isolation, or a production SIEM or SOAR platform. That safety boundary is intentional. I wanted the prototype to be realistic enough to explain a SOC workflow, but limited enough that it stays appropriate for a class assignment.
+This capstone is a small simulated SOC pipeline that shows how AI can support detection and response work without touching real systems. The project uses AI generated synthetic telemetry in the shape of Suricata `eve.json` records. It does not use live traffic, real malware, production firewall rules, endpoint isolation, or a production SIEM or SOAR platform.
 
-The basic idea is that a security event should not jump straight from "the model thinks this is bad" to an automated response. The pipeline processes events in stages: intake, feature extraction, classification, risk scoring, deterministic safety checks, response routing, and evidence preservation. This makes the system easier to explain and easier to audit. If something looks malformed, evasive, or uncertain, the workflow fails into review instead of trusting the classifier blindly.
+This was a purposeful design choice, as the prototype needs to be realistic enough to explain a SOC workflow, but it should still be safe and manageable in scope. A local dataset, local outputs, and simulated response actions demonstrate the process without creating risk for an actual network.
 
-I chose a scikit-learn decision tree as the model because it is simple and explainable. A more complex model might score better in a real SOC, but that was not the goal here. The goal was to demonstrate a bounded semi-autonomous agent that can classify events, assign risk, and route safe simulated actions while preserving a decision trail. The decision tree is trained in memory each run from the combined synthetic dataset, so there is no saved model artifact. The evidence log records this honestly as `model_sha256: "in_memory_not_persisted"`.
+The pipeline also separates the decision into several stages. An event is ingested, checked, turned into features, classified, scored, reviewed by deterministic safety checks, routed to a response path, and then preserved in evidence logs. That structure matters because a model prediction by itself is not enough to justify an automated response. If an event is malformed, evasive, or uncertain, the workflow sends it to review instead of trusting the classifier by default.
 
-The response logic is also deliberately modest. The system can auto-close low-risk benign events, create JSON tickets, send uncertain cases to a review queue, and add high-confidence malicious source IPs to a simulated blocklist text file. The blocklist is only a local file. It does not connect to a real firewall or change a real network control.
+The model is a scikit-learn decision tree because it is a simple, bounded, and explainable classifier. A larger model might be more impressive, but it would also be harder to explain in a short capstone. Here the goal is to show a semi autonomous logic layer that can classify events, assign risk, choose safe simulated actions, and leave behind a clear decision trail. The model is trained in memory on each run from the combined synthetic dataset, so there is no saved model artifact. The evidence log records that honestly with `model_sha256: "in_memory_not_persisted"`.
+
+The response logic is intentionally modest. The system can close low risk benign events, create JSON tickets, send uncertain cases to a review queue, and write malicious source IPs to a simulated blocklist text file. The blocklist is only a local artifact. It does not connect to a firewall or change any real network control.
 
 ## 2. Architecture Diagram
 
 The implemented workflow follows this structure:
 
 ```text
-AI-generated synthetic Suricata-style events
+AI generated synthetic Suricata style events
   -> Event intake and validation
   -> Feature extraction
-  -> Decision-tree classifier
+  -> Decision tree classifier
   -> Risk scoring
   -> Deterministic safety checks
   -> Response routing
@@ -31,61 +35,63 @@ Safety and response branches:
   -> Simulated IP blocklist
 ```
 
-The main end-to-end command is:
+The main pipeline command is:
 
 ```powershell
 python -m minisoc.cli respond data\sample\demo_scenario_events_20.eve.jsonl --train data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl --outputs outputs
 ```
 
-That command trains the in-memory classifier, processes the demo events, applies safety checks, writes response artifacts, and creates the decision log. A separate export command can then package evidence for one selected event:
+That command trains the in memory classifier, processes the demo events, applies safety checks, writes response artifacts, and creates the decision log. A separate export command packages evidence for one selected event:
 
 ```powershell
 python -m minisoc.cli export-evidence --event-id demo-0008 --events data\sample\demo_scenario_events_20.eve.jsonl --decisions outputs\decision_logs\decisions.jsonl --outputs outputs
 ```
 
-In the verified demo run, the pipeline processed 20 demo records. It auto-closed 5 events, created 8 tickets, routed 3 events to review, and wrote 4 entries to the simulated blocklist. Those counts are useful in the demo because they show that the pipeline does not treat every event the same way.
+In the verified demo run, the pipeline processed 20 demo records. It closed 5 events, created 8 tickets, routed 3 events to review, and wrote 4 entries to the simulated blocklist. Those counts are useful because they show that the system does not flatten every alert into the same outcome.
 
 ## 3. Model Or Logic Explanation
 
-The first stage is event intake. The intake code reads line-delimited JSON records that resemble Suricata `eve.json` events. It validates required fields such as `event_id`, `timestamp`, `event_type`, `src_ip`, `dest_ip`, `asset_id`, `expected_label`, and the synthetic ground-truth disclosure. It also calculates a SHA-256 hash of the raw JSON line. That raw hash matters because it gives the later evidence log a stable reference back to the original event.
+The first stage is event intake. The intake code reads line delimited JSON records that resemble Suricata `eve.json` events. It validates required fields such as `event_id`, `timestamp`, `event_type`, `src_ip`, `dest_ip`, `asset_id`, `expected_label`, and the synthetic ground truth disclosure. It also calculates a SHA-256 hash of the raw JSON line and carries it into the decision log as evidence metadata.
 
-After intake, the feature extractor turns the event into a small set of numeric signals. Examples include alert severity, destination port, failed login count, internal probe count, callback interval, domain entropy, URI entropy, byte and packet ratios, asset criticality, missing field flags, obfuscation flags, and prompt-injection-like text flags. The feature extractor also produces reason codes, so the result is not just a number vector.
+After intake, feature extraction turns each event into numeric signals that the classifier and risk scorer can use. These signals include alert severity, destination port, failed login count, internal probe count, callback interval, domain entropy, URI entropy, byte and packet ratios, asset criticality, missing field flags, obfuscation flags, and flags for text that resembles prompt injection. The feature extractor also produces reason codes, so the output is still human readable.
 
 The classifier is a bounded decision tree trained from the combined synthetic dataset. It predicts one of six labels: `benign`, `credential_access`, `lateral_movement`, `command_and_control`, `exploit_attempt`, or `needs_human_review`. The classification result includes the predicted label, confidence score, model name, model version, feature names, and reason codes.
 
-Risk scoring happens after classification. The score combines model confidence, alert severity, asset criticality, activity patterns, and suspicious-input indicators. The output is a numeric risk score from 0 to 100 plus a severity lane such as low, medium, or high. For example, a high-confidence credential-access event with many failed logins receives a higher score than a normal benign web event. Evasive or incomplete inputs also push the score upward because they create operational uncertainty.
+Risk scoring runs after classification. It combines model confidence, alert severity, asset criticality, suspicious activity patterns, and suspicious input indicators into a score from 0 to 100. For example, a credential access event with many failed logins receives a higher score than normal benign traffic. Incomplete or evasive input also raises the score because uncertainty is itself useful information for a SOC analyst.
 
-The deterministic safety checks sit between the model and the response action. This is the part I would describe as the review gate. It blocks automation when the classifier is uncertain, when the event is labelled as needing human review, when intake metadata says review is required, when fields are missing, when obfuscation indicators are present, when prompt-injection-like text appears in an untrusted field, or when a benign prediction conflicts with a high risk score. This is an important design choice because the classifier helps interpret events, but it does not get final authority over automation.
+The deterministic safety checks sit between scoring and response routing. This review gate blocks automation when confidence is low, when the classifier predicts `needs_human_review`, when intake metadata requires review, when fields are missing, when obfuscation indicators are present, when log text resembles prompt injection, or when a benign prediction conflicts with a high risk score. The classifier helps interpret the event, but the review gate decides whether automation is allowed.
 
-Finally, response routing chooses a safe simulated action. Low-risk benign events can be auto-closed. Medium and high risk events can create tickets. Suspicious or unclear events can go to the review queue. High-confidence command-and-control or exploit-like events can write the source IP to the simulated blocklist if the safety checks allow automation.
+Response routing chooses the next safe action based on the score, label, and safety check result. Low risk benign events can be closed, medium and high risk events can create tickets, and suspicious or unclear events go to the review queue. High scoring command and control or exploit activity can write the source IP to the simulated blocklist when automation is allowed.
 
 ## 4. Bypass And Failure Handling
 
-The demo dataset includes suspicious edge cases so the pipeline can show more than a happy path. These include missing analysis fields, obfuscated values, high-entropy strings, and prompt-injection-like text placed inside log fields. The system treats those fields as data, not instructions.
+The demo dataset includes suspicious edge cases so the pipeline shows more than a clean happy path, including records with missing analysis fields, obfuscated values, high entropy strings, and text in a log field that resembles prompt injection. The system treats those values as event data rather than instructions.
 
-For a malformed or incomplete event, intake and feature extraction mark missing fields. Risk scoring raises the priority, and the review gate blocks automation. For obfuscated values, the feature extractor counts obfuscation flags, and the review gate routes the event to human review. For prompt-injection-like text, the system does not follow or interpret the text as an instruction. It flags the record and sends it to review.
+When an event is malformed or incomplete, intake and feature extraction mark the missing fields, risk scoring raises the priority, and the review gate blocks automation. Obfuscated values follow a similar path: the feature extractor counts the indicators, the risk score increases, and the event goes to human review. If a log field contains one of the simple instruction-like marker phrases, the pipeline flags the record and sends it to review instead of treating that text as trusted context.
 
-This behavior is important because a real SOC pipeline would see messy input. Logs can be incomplete, attackers can try to hide indicators, and security tools can disagree. In this project, the safe default is to preserve the event and ask for analyst review rather than auto-closing it or applying a simulated block just because the classifier produced a label.
+That behavior matters because a real SOC pipeline has to handle incomplete logs, hidden indicators, and conflicting signals from different security tools. In those cases, this prototype uses a safe default by preserving the event, recording the reason for concern, and requiring analyst review before any action is taken.
 
 ## 5. Forensic Readiness Strategy
 
-The pipeline preserves evidence at several points. Intake stores the raw event hash. The response workflow writes `outputs/decision_logs/decisions.jsonl`, which records the event ID, timestamp, correlation ID, community ID, raw event SHA-256, model name, model version, model hash status, feature summary, predicted label, confidence, risk score, severity, reason codes, safety-check flags, action taken, analyst override field, review status, and simulated-only flag.
+The pipeline preserves evidence throughout the workflow so a reviewer can trace how a synthetic event moved from intake to response. At intake, the raw JSON line is hashed with SHA-256 before the event is normalized. The response workflow carries that hash into `outputs/decision_logs/decisions.jsonl`, along with the event identity, correlation details, model output, scoring result, safety check outcome, selected simulated action, and analyst review fields. That record gives an analyst the main facts needed to explain why the event was closed, queued for review, turned into a ticket, or added to the simulated blocklist.
 
-The response artifacts are also saved locally. Review items are written to `outputs/review_queue/review_queue.jsonl`. Ticket records are written as JSON files under `outputs/tickets/`. Simulated block actions are written to `outputs/simulated_blocklist.txt`. These artifacts are intentionally simple, but they show what happened and where the event was routed.
+The local response artifacts support the same review trail from an operational point of view. Events that need analyst judgment are written to `outputs/review_queue/review_queue.jsonl`, ticketed events are saved under `outputs/tickets/`, and simulated block decisions are appended to `outputs/simulated_blocklist.txt`. These files are intentionally simple because the project is a local mini-SOC demonstration, but together they show whether the pipeline treated the event as benign, uncertain, suspicious, or serious enough for a simulated containment step.
 
-The `export-evidence` command adds a small forensic package for one selected event. It creates `raw_event.json`, `decision_record.json`, `model_metadata.json`, `action_record.json`, `analyst_summary.md`, and `hash_manifest.json` under `outputs/evidence_exports/<event_id>/`. The hash manifest stores SHA-256 hashes for the exported artifacts so an analyst or reviewer can check whether the package changed after export.
+The `export-evidence` command creates a small review package for one selected event under `outputs/evidence_exports/<event_id>/`. Instead of asking a reviewer to piece together the event from several output folders, the export places the raw event, decision record, model metadata, action record, analyst summary, and hash manifest in one location. The hash manifest records SHA-256 values for the exported files, which gives a basic integrity check if the package is reviewed later.
 
-This is not a real chain-of-custody system, and I would not present it as one. It is a local forensic readiness demonstration. It shows the kind of evidence that should be preserved before a security decision is forgotten, overwritten, or explained only from memory.
+This is not a real chain of custody system, and it should not be presented as one. It is a local forensic readiness demonstration that preserves the information an analyst would need for incident response or audit review: what the original event looked like, how the model classified it, how the score and safety checks affected the decision, what simulated action was taken, and whether the exported evidence changed after it was created.
+
 
 ## 6. Known Limitations
 
-This prototype is intentionally limited. The telemetry is AI-generated synthetic data, so the evaluation shows whether the model learned the simulated patterns, not whether it would perform well in a real SOC. The project does not ingest live traffic, run Suricata, parse real PCAPs, process malware, or connect to production security tooling.
+This prototype is intentionally narrow in scope. The telemetry is AI generated synthetic data, so the evaluation should be read as a check that the model learned the patterns built into the scenario, not as proof that it would perform well in a real SOC. The project also stays fully local. It does not ingest live traffic, run Suricata, parse real PCAPs, process malware, or connect to production security tools.
 
-The response actions are also simulated. A blocklist entry is a text file, not a firewall rule. A ticket is a JSON artifact, not an integration with a ticketing platform. A review queue is a JSONL file, not an analyst console. This keeps the project safe, but it also means the operational parts are demonstrations rather than deployable controls.
+The response layer follows the same controlled approach. A simulated block is written to a text file, tickets are saved as JSON artifacts, and the review queue is stored as JSONL. That lets the demo show how events would move through different response paths without changing a firewall rule, opening a real service desk ticket, or pretending to be an analyst console.
 
-The model is deliberately simple. It is a decision tree trained in memory from `data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl`. There is no persisted model artifact, no drift monitoring, no retraining pipeline, and no live feedback loop from analyst decisions. The project also does not use an LLM in the baseline version, which avoids prompt-handling risk but means there is no natural-language enrichment beyond the generated analyst summary in the export package.
+The AI component is also kept simple on purpose. The classifier is a decision tree trained in memory from `data\raw\synthetic_minisoc_events_combined_2200.eve.jsonl` each time the command runs. There is no persisted model artifact, drift monitoring, retraining pipeline, or live feedback loop from analyst decisions. The baseline version also avoids using an LLM, which reduces prompt handling risk but limits natural language enrichment to the generated analyst summary in the export package.
 
-Overall, I would describe the project as a safe, explainable mini-SOC prototype. It demonstrates the required pieces: event intake, threat classification, risk scoring, bypass handling, simulated response, evidence logging, and forensic export. It is not production ready, and it is not trying to be. The useful part is that each decision leaves enough evidence behind for a reviewer to understand what happened and why.
+Taken together, these limits are part of the design rather than hidden production gaps. The project is a safe, explainable mini-SOC prototype that connects event intake, threat classification, risk scoring, review checks, simulated response, evidence logging, and forensic export in one traceable workflow. It is not production ready, but it shows how a security automation pipeline can leave enough evidence behind for a reviewer to understand what happened and why.
+
 
 ## Integrity Statement
 
